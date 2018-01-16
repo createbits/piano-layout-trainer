@@ -1,9 +1,10 @@
 <template>
-  <div style="max-width: 1100px; margin: 0 auto">
+  <div class="font-muli" style="max-width: 1100px; margin: 0 auto">
     <button v-if="!hasStarted" @click.prevent="startGame">Start game</button>
 
     <div v-if="hasStarted">
-      <div v-html="`You pressed: <b>${currentNotePressed.toUpperCase()}</b>`" class="h1 b center"></div>
+      <div v-html="`You pressed: <b>${currentNotePressed.toUpperCase()}</b>`" class="h1 center"></div>
+      <div v-html="`Streak: <b>${streakCount}</b>`" class="h2 mv1 center"></div>
 
       <!-- white tiles -->
       <div class="relative">
@@ -24,15 +25,11 @@
       </div>
 
       <div class="mt3 f5">
-        + Press letter for note
-
-        <div class="mt1">
-          + Press shift for sharp
-        </div>
-
-        <div class="mt1">
-          + Press ctrl for flat
-        </div>
+        <ul>
+          <li>Press letter for note</li>
+          <li>Press shift for sharp</li>
+          <li>Press ctrl for flat</li>
+        </ul>
       </div>
     </div>
 
@@ -63,11 +60,12 @@
 
   const convertNToIndex = n => ((n - 1) % 7)
   const isSameTileAsPressed = (noteToCompare, type, n) =>
-    tileNoteMap[`${type}_${convertNToIndex(n)}`].includes(noteToCompare.toLowerCase())
+    tileNoteMap[`${type}_${convertNToIndex(n)}`].includes(noteToCompare)
 
   const initData = {
     size: 1,
     tileCount: 14,
+    streakCount: 0,
     noteBeingPlayed: null,
     keyPressed: '',
     isSharp: false,
@@ -81,7 +79,14 @@
     },
     computed: {
       currentNotePressed () {
-        return `${this.keyPressed}${(this.isSharp ? '#' : '')}${(this.isFlat ? '♭' : '')}`
+        return `${this.keyPressed.toLowerCase()}${(this.isSharp ? '#' : '')}${(this.isFlat ? '♭' : '')}`
+      },
+      hasMatchedNote () {
+        const notes = Object.values(tileNoteMap).find(
+          notes => notes.includes(this.currentNotePressed),
+        )
+
+        return (notes || []).includes((this.noteBeingPlayed || {}).note)
       },
     },
     methods: {
@@ -96,9 +101,17 @@
           this.keyPressed = pressed.key
           this.isSharp = pressed.shiftKey
           this.isFlat = pressed.ctrlKey
+
+          if (this.hasMatchedNote) {
+            this.streakCount += 1
+          } else {
+            this.streakCount = 0
+          }
         })
 
         startPianoGame((noteBeingPlayed) => {
+          if (!this.hasMatchedNote) this.streakCount = 0
+
           this.noteBeingPlayed = noteBeingPlayed
           this.keyPressed = initData.keyPressed
           this.isSharp = initData.isSharp
