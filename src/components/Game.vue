@@ -1,10 +1,10 @@
 <template>
   <div class="font-muli" style="max-width: 1100px; margin: 0 auto">
-    <button v-if="!hasStarted" @click.prevent="startGame">Start game</button>
+    <button v-if="!hasStarted" @click.prevent="startGame">Play easy mode</button>
+    <button v-if="!hasStarted" @click.prevent="startGame('hard')">Play hard mode</button>
+    <button v-if="!hasStarted" @click.prevent="startGame('extreme')">Play extreme mode</button>
 
     <div v-if="hasStarted">
-      <div v-html="`You pressed: <b>${currentNotePressed.toUpperCase()}</b>`" class="h1 center"></div>
-      <div v-html="`Streak: <b>${streakCount}</b>`" class="h2 mv1 center"></div>
 
       <!-- white tiles -->
       <div class="relative">
@@ -22,6 +22,10 @@
                  :style="`height: ${80 * size}px`"></div>
           </div>
         </div>
+
+        <div v-text="currentDescription" class="h1 bold my2"></div>
+        <div v-html="`Streak: <b>${streakCount}</b>`" class="h3 mt1"></div>
+      <div v-html="`You pressed: <b>${currentNotePressed.toUpperCase()}</b>`" class="h3"></div>
       </div>
 
       <div class="mt3 f5">
@@ -71,6 +75,7 @@
     isSharp: false,
     isFlat: false,
     hasStarted: false,
+    currentDescription: '',
   }
 
   export default {
@@ -90,7 +95,7 @@
       },
     },
     methods: {
-      startGame () {
+      startGame (gameMode = false) {
         if (this.hasStarted) return null
 
         Mousetrap.bind([
@@ -109,10 +114,12 @@
           }
         })
 
-        startPianoGame((noteBeingPlayed) => {
+        startPianoGame(gameMode, (noteBeingPlayed, description) => {
           if (!this.hasMatchedNote) this.streakCount = 0
 
+          console.log(noteBeingPlayed)
           this.noteBeingPlayed = noteBeingPlayed
+          this.currentDescription = description
           this.keyPressed = initData.keyPressed
           this.isSharp = initData.isSharp
           this.isFlat = initData.isFlat
@@ -144,13 +151,16 @@
 
         return isSameTileAsPressed(this.noteBeingPlayed.note, type, n)
       },
-      getTileBackgroundClass (type, n) {
-        const isActive = this.isActiveTile(type, n)
+      isHighlightedTile (type, n) {
+        if (!this.noteBeingPlayed) return false
 
+        return isSameTileAsPressed(this.noteBeingPlayed.noteToHighlight, type, n)
+      },
+      getTileBackgroundClass (type, n) {
         if (this.isCorrectTile(type, n)) return 'green-bg'
         if (this.isWrongTile(type, n)) return 'red-bg'
-        if (isActive) return 'yellow-bg'
-        if (!isActive && type === 'black') return 'black-bg'
+        if (this.isHighlightedTile(type, n)) return 'yellow-bg'
+        if (type === 'black') return 'black-bg'
       }
     },
   }
