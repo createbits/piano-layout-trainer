@@ -3,7 +3,7 @@
     <button v-if="!hasStarted" @click.prevent="startGame">Start game</button>
 
     <div v-if="hasStarted">
-      <div v-html="`You pressed: <b>${(keyPressed || '').toUpperCase()}</b>`" class="h1 b center"></div>
+      <div v-html="`You pressed: <b>${currentNotePressed.toUpperCase()}</b>`" class="h1 b center"></div>
 
       <!-- white tiles -->
       <div class="relative">
@@ -22,6 +22,18 @@
           </div>
         </div>
       </div>
+
+      <div class="mt3 f5">
+        + Press letter for note
+
+        <div class="mt1">
+          + Press shift for sharp
+        </div>
+
+        <div class="mt1">
+          + Press ctrl for flat
+        </div>
+      </div>
     </div>
 
     <div class="mt4">
@@ -30,41 +42,67 @@
   </div>
 </template>
 <script>
+  import { clone } from 'lodash'
   import Mousetrap from 'mousetrap'
   import { noteCollection, startPianoGame, stopPianoGame } from '../lib/PianoGame'
 
-  const numberToNoteMap = {
-    0: 'c',
-    1: 'd',
-    2: 'e',
-    3: 'f',
-    4: 'g',
-    5: 'a',
-    6: 'b',
+  const tileNoteMap = {
+    white_0: ['c', 'b#'],
+    white_1: ['d'],
+    white_2: ['e', 'f♭'],
+    white_3: ['f', 'e#'],
+    white_4: ['g'],
+    white_5: ['a'],
+    white_6: ['b', 'c♭'],
+    black_1: ['c#', 'd♭'],
+    black_2: ['d#', 'e♭'],
+    black_4: ['f#', 'g♭'],
+    black_5: ['g#', 'a♭'],
+    black_6: ['a#', 'b♭'],
+  }
+
+  const convertNToIndex = n => ((n - 1) % 7)
+  const isSameTileAsPressed = (noteToCompare, type, n) =>
+    tileNoteMap[`${type}_${convertNToIndex(n)}`].includes(noteToCompare.toLowerCase())
+
+  const initData = {
+    size: 1,
+    tileCount: 14,
+    noteBeingPlayed: null,
+    keyPressed: '',
+    isSharp: false,
+    isFlat: false,
+    hasStarted: false,
   }
 
   export default {
     data() {
-      return {
-        size: 1,
-        tileCount: 14,
-        noteBeingPlayed: null,
-        keyPressed: null,
-        hasStarted: false,
-      }
+      return clone(initData)
+    },
+    computed: {
+      currentNotePressed () {
+        return `${this.keyPressed}${(this.isSharp ? '#' : '')}${(this.isFlat ? '♭' : '')}`
+      },
     },
     methods: {
       startGame () {
         if (this.hasStarted) return null
 
-        Mousetrap.bind(noteCollection, (pressed) => {
+        Mousetrap.bind([
+          ...noteCollection,
+          ...noteCollection.map(n => `shift+${n}`),
+          ...noteCollection.map(n => `ctrl+${n}`),
+        ], (pressed) => {
           this.keyPressed = pressed.key
-          console.log(this.keyPressed)
+          this.isSharp = pressed.shiftKey
+          this.isFlat = pressed.ctrlKey
         })
 
         startPianoGame((noteBeingPlayed) => {
           this.noteBeingPlayed = noteBeingPlayed
-          this.keyPressed = null
+          this.keyPressed = initData.keyPressed
+          this.isSharp = initData.isSharp
+          this.isFlat = initData.isFlat
         })
 
         this.hasStarted = true
@@ -75,32 +113,23 @@
 
         stopPianoGame()
       },
-      convertNToIndex (n) {
-        return (n - 1) % 7
-      },
       shouldRenderBlackTitle (n) {
-        return [1, 2, 4, 5, 6].includes(this.convertNToIndex(n))
+        return [1, 2, 4, 5, 6].includes(convertNToIndex(n))
       },
       isCorrectTile (type, n) {
         if (!this.keyPressed || !this.isActiveTile(type, n)) return false
 
-        if (type === 'white') {
-          return this.keyPressed === numberToNoteMap[this.convertNToIndex(n)]
-        }
+        return isSameTileAsPressed(this.currentNotePressed, type, n)
       },
       isWrongTile (type, n) {
         if (!this.keyPressed || this.isActiveTile(type, n)) return false
 
-        if (type === 'white') return this.keyPressed === numberToNoteMap[this.convertNToIndex(n)]
+        return isSameTileAsPressed(this.currentNotePressed, type, n)
       },
       isActiveTile (type, n) {
         if (!this.noteBeingPlayed) return false
 
-        if (type === 'white' && !this.noteBeingPlayed.accent) {
-          return numberToNoteMap[this.convertNToIndex(n)] === this.noteBeingPlayed.note
-        }
-
-        return false
+        return isSameTileAsPressed(this.noteBeingPlayed.note, type, n)
       },
       getTileBackgroundClass (type, n) {
         const isActive = this.isActiveTile(type, n)
