@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "poi dev src/index.js",
     "build": "poi build src/index.js",
-    "deploy-test": "yarn build && cd dist && surge . --domain test-createbits-trainer.surge.sh",
+    "deploy-test": "yarn build && cd dist && surge . --domain test-createbits-piano-layout.surge.sh",
     "test": "jest --watch"
   },
   "license": "MIT",
@@ -20,7 +20,8 @@
     "sass-loader": "^6.0.3",
     "vue": "^2.3.2",
     "vue-js-modal": "^1.0.21",
-    "vue-router": "^2.5.3"
+    "vue-router": "^2.5.3",
+    "webmidi": "^2.0.0"
   },
   "devDependencies": {
     "babel-jest": "^19.0.0",

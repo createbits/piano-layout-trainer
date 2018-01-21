@@ -53,7 +53,7 @@ let handle
 export const startPianoGame = (mode, cb) => {
   handle = setInterval(() => {
     let noteToPlay = sample(noteCollection)
-    let description = 'Play note as displayed on the layout'
+    let description = `Play the following note: ${noteToPlay.toUpperCase()}`
     let noteToHighlight = noteToPlay
 
     if (mode) {

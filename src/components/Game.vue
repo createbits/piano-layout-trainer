@@ -1,6 +1,6 @@
 <template>
   <div class="font-muli" style="max-width: 1100px; margin: 0 auto">
-    <button v-if="!hasStarted" @click.prevent="startGame">Play easy mode</button>
+    <button v-if="!hasStarted" @click.prevent="startGame()">Play easy mode</button>
     <button v-if="!hasStarted" @click.prevent="startGame('hard')">Play hard mode</button>
     <button v-if="!hasStarted" @click.prevent="startGame('extreme')">Play extreme mode</button>
 
@@ -45,6 +45,7 @@
 <script>
   import { clone } from 'lodash'
   import Mousetrap from 'mousetrap'
+  import WebMidi from 'webmidi'
   import { noteCollection, startPianoGame, stopPianoGame } from '../lib/PianoGame'
 
   const tileNoteMap = {
@@ -71,11 +72,10 @@
     tileCount: 14,
     streakCount: 0,
     noteBeingPlayed: null,
-    keyPressed: '',
-    isSharp: false,
-    isFlat: false,
     hasStarted: false,
     currentDescription: '',
+    gameMode: false,
+    currentNotePressed: '',
   }
 
   export default {
@@ -83,9 +83,6 @@
       return clone(initData)
     },
     computed: {
-      currentNotePressed () {
-        return `${this.keyPressed.toLowerCase()}${(this.isSharp ? '#' : '')}${(this.isFlat ? '♭' : '')}`
-      },
       hasMatchedNote () {
         const notes = Object.values(tileNoteMap).find(
           notes => notes.includes(this.currentNotePressed),
@@ -95,6 +92,15 @@
       },
     },
     methods: {
+      pressNote (note) {
+        this.currentNotePressed = note.toLowerCase()
+
+        if (this.hasMatchedNote) {
+          this.streakCount += 1
+        } else {
+          this.streakCount = 0
+        }
+      },
       startGame (gameMode = false) {
         if (this.hasStarted) return null
 
@@ -103,32 +109,35 @@
           ...noteCollection.map(n => `shift+${n}`),
           ...noteCollection.map(n => `ctrl+${n}`),
         ], (pressed) => {
-          this.keyPressed = pressed.key
-          this.isSharp = pressed.shiftKey
-          this.isFlat = pressed.ctrlKey
-
-          if (this.hasMatchedNote) {
-            this.streakCount += 1
-          } else {
-            this.streakCount = 0
-          }
+          this.pressNote(
+            `${pressed.key}${(pressed.shiftKey ? '#' : '')}${(pressed.ctrlKey ? '♭' : '')}`,
+          )
         })
+
+        WebMidi.enable(err => {
+          if (err) console.log('WebMidi not enabled.')
+
+          WebMidi.inputs.forEach(input => input.addListener(
+            'noteon',
+            'all',
+            e => this.pressNote(e.note.name),
+          ))
+        })
+
+        this.gameMode = gameMode
 
         startPianoGame(gameMode, (noteBeingPlayed, description) => {
           if (!this.hasMatchedNote) this.streakCount = 0
 
-          console.log(noteBeingPlayed)
           this.noteBeingPlayed = noteBeingPlayed
           this.currentDescription = description
-          this.keyPressed = initData.keyPressed
-          this.isSharp = initData.isSharp
-          this.isFlat = initData.isFlat
+          this.currentNotePressed = initData.currentNotePressed
         })
 
         this.hasStarted = true
       },
       stopGame () {
-        this.keyPressed = null
+        this.currentNotePressed = initData.currentNotePressed
         this.hasStarted = false
 
         stopPianoGame()
@@ -137,12 +146,12 @@
         return [1, 2, 4, 5, 6].includes(convertNToIndex(n))
       },
       isCorrectTile (type, n) {
-        if (!this.keyPressed || !this.isActiveTile(type, n)) return false
+        if (!this.currentNotePressed || !this.isActiveTile(type, n)) return false
 
         return isSameTileAsPressed(this.currentNotePressed, type, n)
       },
       isWrongTile (type, n) {
-        if (!this.keyPressed || this.isActiveTile(type, n)) return false
+        if (!this.currentNotePressed || this.isActiveTile(type, n)) return false
 
         return isSameTileAsPressed(this.currentNotePressed, type, n)
       },
@@ -152,7 +161,7 @@
         return isSameTileAsPressed(this.noteBeingPlayed.note, type, n)
       },
       isHighlightedTile (type, n) {
-        if (!this.noteBeingPlayed) return false
+        if (!this.noteBeingPlayed || !this.gameMode) return false
 
         return isSameTileAsPressed(this.noteBeingPlayed.noteToHighlight, type, n)
       },
