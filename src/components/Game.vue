@@ -6,26 +6,28 @@
 
     <div v-if="hasStarted">
 
-      <!-- white tiles -->
-      <div class="relative">
-        <div v-for="n in tileCount"
-             :class="['inline-block border border-black mt4', getTileBackgroundClass('white', n)]"
-             :style="`width: ${40 * size}px; height: ${120 * size}px;`">
-        </div>
-        <!-- black tiles -->
-        <div class="absolute" style="top: 0; left: 0">
+      <div class="center">
+        <div v-text="currentDescription" style="min-height: 50px; font-size: 3rem" class="bold my2"></div>
+        <div v-html="`Streak: <b>${streakCount}</b>`" class="h3 mt1"></div>
+        <div v-html="`You pressed: <b>${currentNotePressed.toUpperCase()}</b>`" class="h3"></div>
+
+        <div class="relative mx-auto" style="width: 590px">
+          <!-- white tiles -->
           <div v-for="n in tileCount"
-               :class="['inline-block mt4 relative']"
-               :style="`width: ${41 * size}px; height: ${100 * size}px; left: -10px; top: 0`">
-            <div v-if="shouldRenderBlackTitle(n)"
-                 :class="['col-9', getTileBackgroundClass('black', n)]"
-                 :style="`height: ${80 * size}px`"></div>
+               :class="['inline-block border border-black mt4', getTileBackgroundClass('white', n)]"
+               :style="`width: ${40 * size}px; height: ${120 * size}px;`">
+          </div>
+          <!-- black tiles -->
+          <div class="absolute" style="top: 0; left: 0">
+            <div v-for="n in tileCount"
+                 :class="['inline-block mt4 relative']"
+                 :style="`width: ${41 * size}px; height: ${100 * size}px; left: -10px; top: 0`">
+              <div v-if="shouldRenderBlackTitle(n)"
+                   :class="['col-9', getTileBackgroundClass('black', n)]"
+                   :style="`height: ${80 * size}px`"></div>
+            </div>
           </div>
         </div>
-
-        <div v-text="currentDescription" class="h1 bold my2"></div>
-        <div v-html="`Streak: <b>${streakCount}</b>`" class="h3 mt1"></div>
-      <div v-html="`You pressed: <b>${currentNotePressed.toUpperCase()}</b>`" class="h3"></div>
       </div>
 
       <div class="mt3 f5">
@@ -126,12 +128,13 @@
 
         this.gameMode = gameMode
 
-        startPianoGame(gameMode, (noteBeingPlayed, description) => {
+        startPianoGame(gameMode, (noteBeingPlayed, description, setStreak) => {
           if (!this.hasMatchedNote) this.streakCount = 0
 
           this.noteBeingPlayed = noteBeingPlayed
           this.currentDescription = description
           this.currentNotePressed = initData.currentNotePressed
+          setStreak(this.streakCount)
         })
 
         this.hasStarted = true
@@ -139,6 +142,7 @@
       stopGame () {
         this.currentNotePressed = initData.currentNotePressed
         this.hasStarted = false
+        this.currentDescription = ''
 
         stopPianoGame()
       },

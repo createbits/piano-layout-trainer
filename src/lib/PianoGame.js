@@ -48,39 +48,50 @@ const hardIntervals = [
   { type: 'major', distance: 7 },
 ]
 
-let handle
+let isPlaying
 
-export const startPianoGame = (mode, cb) => {
-  handle = setInterval(() => {
-    let noteToPlay = sample(noteCollection)
-    let description = `Play the following note: ${noteToPlay.toUpperCase()}`
-    let noteToHighlight = noteToPlay
+const playGame = (mode, cb, streak = 0) => {
+  let noteToPlay = sample(noteCollection)
+  let description = `Play the following note: ${noteToPlay.toUpperCase()}`
+  let noteToHighlight = noteToPlay
 
-    if (mode) {
-      let intervalToUse
+  if (mode) {
+    let intervalToUse
 
-      if (mode === 'extreme') {
-        intervalToUse = sample(chordIntervals)
-      } else if (mode === 'hard') {
-        intervalToUse = sample(hardIntervals)
-      } else {
-        throw new Error('Invalid mode')
-      }
-
-      noteToPlay = intervals(
-        // TODO: fix in library with replace logic
-        note(noteToPlay.replace('#', 'Sharp').replace('♭', 'Flat'), 4),
-        [intervalToUse],
-      )[0].split('_')[0].replace('Sharp', '#').replace('Flat', '♭')
-      description = `Play the ${startCase(intervalToUse.type)} ${(intervalToUse.distance || '')}`
+    if (mode === 'extreme') {
+      intervalToUse = sample(chordIntervals)
+    } else if (mode === 'hard') {
+      intervalToUse = sample(hardIntervals)
+    } else {
+      throw new Error('Invalid mode')
     }
 
-    play(note(noteToPlay, 4), 200, 1000)
+    noteToPlay = intervals(
+      // TODO: fix in library with replace logic
+      note(noteToPlay.replace('#', 'Sharp').replace('♭', 'Flat'), 4),
+      [intervalToUse],
+    )[0].split('_')[0].replace('Sharp', '#').replace('Flat', '♭')
+    description = `Play the ${startCase(intervalToUse.type)} ${(intervalToUse.distance || '')}`
+  }
 
-    cb({ note: noteToPlay, noteToHighlight }, description)
-  }, 3000)
+  play(note(noteToPlay, 4), 200, 200)
+
+  cb({ note: noteToPlay, noteToHighlight }, description, (streakCount) => {
+    streak = streakCount
+  })
+
+  const intervalMs = 3000 - ((streak > 20 ? 20 : streak) * 115)
+
+  setTimeout(() => {
+    if (isPlaying) playGame(mode, cb, streak)
+  }, intervalMs)
+}
+
+export const startPianoGame = (mode, cb) => {
+  isPlaying = true
+  playGame(mode, cb)
 }
 
 export const stopPianoGame = () => {
-  if (handle) clearInterval(handle)
+  isPlaying = false
 }
