@@ -80,7 +80,7 @@ const playGame = (mode, cb, streak = 0) => {
     streak = streakCount
   })
 
-  const intervalMs = 3000 - ((streak > 20 ? 20 : streak) * 115)
+  const intervalMs = 3000 - ((streak > 20 ? 20 : streak) * 90)
 
   setTimeout(() => {
     if (isPlaying) playGame(mode, cb, streak)
