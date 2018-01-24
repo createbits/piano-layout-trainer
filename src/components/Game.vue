@@ -28,14 +28,8 @@
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="mt3 f5">
-        <ul>
-          <li>Press letter for note</li>
-          <li>Press shift for sharp</li>
-          <li>Press ctrl for flat</li>
-        </ul>
+        <div v-html="`Your best Streak: <b>${bestStreakCount}</b>`" class="h3 mt1"></div>
       </div>
     </div>
 
@@ -78,6 +72,7 @@
     currentDescription: '',
     gameMode: false,
     currentNotePressed: '',
+    bestStreakCount: 0,
   }
 
   export default {
@@ -100,8 +95,15 @@
         if (this.hasMatchedNote) {
           this.streakCount += 1
         } else {
-          this.streakCount = 0
+          this.resetStreak()
         }
+      },
+      resetStreak () {
+        if (this.streakCount > this.bestStreakCount) {
+          this.bestStreakCount = this.streakCount
+        }
+
+        this.streakCount = 0
       },
       startGame (gameMode = false) {
         if (this.hasStarted) return null
@@ -129,7 +131,7 @@
         this.gameMode = gameMode
 
         startPianoGame(gameMode, (noteBeingPlayed, description, setStreak) => {
-          if (!this.hasMatchedNote) this.streakCount = 0
+          if (!this.hasMatchedNote) this.resetStreak()
 
           this.noteBeingPlayed = noteBeingPlayed
           this.currentDescription = description
