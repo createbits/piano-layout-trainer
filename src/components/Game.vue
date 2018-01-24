@@ -7,9 +7,9 @@
     <div v-if="hasStarted">
 
       <div class="center">
-        <div v-text="currentDescription" style="min-height: 50px; font-size: 3rem" class="bold my2"></div>
+        <div v-text="currentDescription" style="min-height: 80px; font-size: 3rem" class="bold my2"></div>
         <div v-html="`Streak: <b>${streakCount}</b>`" class="h3 mt1"></div>
-        <div v-html="`You pressed: <b>${currentNotePressed.toUpperCase()}</b>`" class="h3"></div>
+        <div v-html="`You pressed: <b>${currentNotePressed.toUpperCase()}</b>`" style="min-height: 35px" class="h3"></div>
 
         <div class="relative mx-auto" style="width: 590px">
           <!-- white tiles -->
@@ -129,6 +129,7 @@
         })
 
         this.gameMode = gameMode
+        this.bestStreakCount = 0
 
         startPianoGame(gameMode, (noteBeingPlayed, description, setStreak) => {
           if (!this.hasMatchedNote) this.resetStreak()

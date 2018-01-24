@@ -74,11 +74,15 @@ const playGame = (mode, cb, streak = 0) => {
     description = `Play the ${startCase(intervalToUse.type)} ${(intervalToUse.distance || '')}`
   }
 
-  play(note(noteToPlay, 4), 200, 200)
+  try {
+    play(note(noteToPlay, 4), 200, 200)
 
-  cb({ note: noteToPlay, noteToHighlight }, description, (streakCount) => {
-    streak = streakCount
-  })
+    cb({ note: noteToPlay, noteToHighlight }, description, (streakCount) => {
+      streak = streakCount
+    })
+  } catch (e) {
+    ['Had error', e].forEach(console.log)
+  }
 
   const intervalMs = 3000 - ((streak > 20 ? 20 : streak) * 90)
 
